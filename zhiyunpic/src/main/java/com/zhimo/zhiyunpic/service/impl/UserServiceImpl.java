@@ -145,7 +145,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     }
 
     @Override
-    public List<UserVO> listUsers(UserQueryDTO queryDTO) {
+    public Page<UserVO> listUsers(UserQueryDTO queryDTO) {
         long current = queryDTO.getCurrent();
         long size = queryDTO.getPageSize();
         Page<User> userPage = this.page(new Page<>(current, size),
@@ -153,7 +153,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         Page<UserVO> userVOPage = new Page<>(current, size, userPage.getTotal());
         List<UserVO> userVOList = UserUtils.getUserVOList(userPage.getRecords());
         userVOPage.setRecords(userVOList);
-        return userVOList;
+        return userVOPage;
     }
 
 }

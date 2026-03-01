@@ -1,5 +1,6 @@
 package com.zhimo.zhiyunpic.service;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.zhimo.zhiyunpic.model.dto.user.UserQueryDTO;
 import com.zhimo.zhiyunpic.model.dto.user.UserUpdateDTO;
@@ -66,7 +67,7 @@ public interface UserService extends IService<User> {
      * @param queryDTO
      * @return
      */
-    List<UserVO> listUsers(UserQueryDTO queryDTO);
+    Page<UserVO> listUsers(UserQueryDTO queryDTO);
 
 
 

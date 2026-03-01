@@ -1,5 +1,6 @@
 package com.zhimo.zhiyunpic.controller;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.zhimo.zhiyunpic.annotation.AuthCheck;
 import com.zhimo.zhiyunpic.common.BaseResponse;
 import com.zhimo.zhiyunpic.common.DeleteRequest;
@@ -152,9 +153,9 @@ public class UserController {
      * @return 用户列表
      */
     @PostMapping("/list/page/vo")
-    public BaseResponse<List<UserVO>> listUsers(@RequestBody UserQueryDTO queryDTO) {
+    public BaseResponse<Page<UserVO>> listUsers(@RequestBody UserQueryDTO queryDTO) {
         ThrowUtils.throwIf(queryDTO == null, ErrorCode.PARAMS_ERROR);
-        List<UserVO> UserVOList = userService.listUsers(queryDTO);
+        Page<UserVO> UserVOList = userService.listUsers(queryDTO);
         return ResultUtils.success(UserVOList);
     }
 
