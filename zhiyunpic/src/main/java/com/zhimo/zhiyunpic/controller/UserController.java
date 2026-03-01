@@ -182,7 +182,7 @@ public class UserController {
      */
     @PostMapping("/delete")
     @AuthCheck(mustRole = UserConstants.ADMIN_ROLE)
-    public BaseResponse<Boolean> deleteUser(@RequestParam("id") DeleteRequest request) {
+    public BaseResponse<Boolean> deleteUser(@RequestBody DeleteRequest request) {
         if (request == null || request.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
