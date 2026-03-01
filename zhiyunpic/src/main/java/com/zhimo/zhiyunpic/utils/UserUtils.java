@@ -12,12 +12,10 @@ import com.zhimo.zhiyunpic.model.entity.User;
 import com.zhimo.zhiyunpic.model.vo.user.UserLoginVO;
 import com.zhimo.zhiyunpic.model.vo.user.UserVO;
 import org.springframework.beans.BeanUtils;
-import org.springframework.cache.annotation.CachePut;
 import org.springframework.util.DigestUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -100,7 +98,7 @@ public class UserUtils {
      * @param userList
      * @return List<UserVO>
      */
-    public List<UserVO> getUserVOList(List<User> userList) {
+    public static List<UserVO> getUserVOList(List<User> userList) {
         if (CollUtil.isEmpty(userList)) {
             return new ArrayList<>();
         }
@@ -112,7 +110,7 @@ public class UserUtils {
      * @param userQueryDTO
      * @return
      */
-    public QueryWrapper<User> getQueryWrapper(UserQueryDTO userQueryDTO) {
+    public static QueryWrapper<User> getQueryWrapper(UserQueryDTO userQueryDTO) {
         if (userQueryDTO == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "请求参数为空");
         }

@@ -59,6 +59,7 @@ public class AuthInterceptor {
         }
         // 要求必须有管理员权限，但用户没有管理员权限，拒绝
         if (UserRoleEnum.ADMIN.equals(mustRoleEnum) && !UserRoleEnum.ADMIN.equals(userRoleEnum)) {
+            log.info("用户 {} 角色为 {}", loginUser.getUserAccount(), loginUser.getUserRole());
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
         }
         // 通过权限校验，放行

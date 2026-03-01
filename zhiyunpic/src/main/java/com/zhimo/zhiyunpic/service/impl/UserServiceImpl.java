@@ -1,22 +1,31 @@
 package com.zhimo.zhiyunpic.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.zhimo.zhiyunpic.common.PageRequest;
 import com.zhimo.zhiyunpic.constants.user.UserConstants;
 import com.zhimo.zhiyunpic.exception.BusinessException;
 import com.zhimo.zhiyunpic.exception.ErrorCode;
 import com.zhimo.zhiyunpic.mapper.UserMapper;
+import com.zhimo.zhiyunpic.model.dto.user.UserQueryDTO;
+import com.zhimo.zhiyunpic.model.dto.user.UserUpdateDTO;
 import com.zhimo.zhiyunpic.model.entity.User;
 import com.zhimo.zhiyunpic.model.enums.UserRoleEnum;
 import com.zhimo.zhiyunpic.model.vo.user.UserLoginVO;
+import com.zhimo.zhiyunpic.model.vo.user.UserVO;
 import com.zhimo.zhiyunpic.service.UserService;
+import com.zhimo.zhiyunpic.utils.ThrowUtils;
 import com.zhimo.zhiyunpic.utils.UserUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
 * @author 93988
@@ -125,6 +134,27 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
 //    endregion
 //    region 增删改查
+
+    @Override
+    public boolean updateUser(UserUpdateDTO updateDTO) {
+        User user = new User();
+        BeanUtil.copyProperties(updateDTO, user);
+        boolean result = this.updateById(user);
+        ThrowUtils.throwIf(!result, ErrorCode.DATABASE_ERROR, "更新失败");
+        return true;
+    }
+
+    @Override
+    public List<UserVO> listUsers(UserQueryDTO queryDTO) {
+        long current = queryDTO.getCurrent();
+        long size = queryDTO.getPageSize();
+        Page<User> userPage = this.page(new Page<>(current, size),
+                UserUtils.getQueryWrapper(queryDTO));
+        Page<UserVO> userVOPage = new Page<>(current, size, userPage.getTotal());
+        List<UserVO> userVOList = UserUtils.getUserVOList(userPage.getRecords());
+        userVOPage.setRecords(userVOList);
+        return userVOList;
+    }
 
 }
 

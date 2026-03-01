@@ -32,4 +32,6 @@ public class UserConstants {
      * 登录用户Session键
      */
     public static final String USER_LOGIN_STATE = "user_login";
+
+    public static final String DEFAULT_PASSWORD = "12345678";
 }

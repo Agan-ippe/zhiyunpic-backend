@@ -1,18 +1,20 @@
 package com.zhimo.zhiyunpic.controller;
 
+import com.zhimo.zhiyunpic.annotation.AuthCheck;
 import com.zhimo.zhiyunpic.common.BaseResponse;
+import com.zhimo.zhiyunpic.common.DeleteRequest;
+import com.zhimo.zhiyunpic.constants.user.UserConstants;
+import com.zhimo.zhiyunpic.exception.BusinessException;
 import com.zhimo.zhiyunpic.exception.ErrorCode;
-import com.zhimo.zhiyunpic.model.dto.user.UserLoginDTO;
-import com.zhimo.zhiyunpic.model.dto.user.UserQueryDTO;
-import com.zhimo.zhiyunpic.model.dto.user.UserRegisterDTO;
-import com.zhimo.zhiyunpic.model.dto.user.UserUpdateDTO;
+import com.zhimo.zhiyunpic.model.dto.user.*;
 import com.zhimo.zhiyunpic.model.entity.User;
 import com.zhimo.zhiyunpic.model.vo.user.UserLoginVO;
+import com.zhimo.zhiyunpic.model.vo.user.UserVO;
 import com.zhimo.zhiyunpic.service.UserService;
-import com.zhimo.zhiyunpic.service.UserServiceNew;
 import com.zhimo.zhiyunpic.utils.ResultUtils;
 import com.zhimo.zhiyunpic.utils.ThrowUtils;
 import com.zhimo.zhiyunpic.utils.UserUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -30,11 +32,9 @@ import java.util.List;
 public class UserController {
 
     @Resource
-    private UserServiceNew userServiceNew;
-
-    @Resource
     private UserService userService;
 
+    //    region 登录相关
     /**
      * 用户注册
      *
@@ -44,7 +44,7 @@ public class UserController {
     @PostMapping("/register")
     public BaseResponse<Long> userRegister(@RequestBody UserRegisterDTO userRegisterDTO) {
         ThrowUtils.throwIf(userRegisterDTO == null,ErrorCode.PARAMS_ERROR);
-        long userId = userServiceNew.userRegister(
+        long userId = userService.userRegister(
                 userRegisterDTO.getUserAccount(),
                 userRegisterDTO.getUserPassword(),
                 userRegisterDTO.getCheckPassword()
@@ -62,7 +62,7 @@ public class UserController {
     @PostMapping("/login")
     public BaseResponse<UserLoginVO> userLogin(@RequestBody UserLoginDTO userLoginDTO, HttpServletRequest request) {
         ThrowUtils.throwIf(userLoginDTO == null,ErrorCode.PARAMS_ERROR);
-        UserLoginVO userLoginVO = userServiceNew.userLogin(
+        UserLoginVO userLoginVO = userService.userLogin(
                 userLoginDTO.getUserAccount(),
                 userLoginDTO.getUserPassword(),
                 request
@@ -95,28 +95,67 @@ public class UserController {
         return ResultUtils.success(UserUtils.getUserLoginVO(loginUser));
     }
 
+    //    endregion
+    //    region 增删改查
+
+
     /**
-     * 根据ID获取用户信息
+     * 创建用户
+     */
+    @PostMapping("/add")
+    @AuthCheck(mustRole = UserConstants.ADMIN_ROLE)
+    public BaseResponse<Long> addUser(@RequestBody UserAddDTO userAddDTO) {
+        ThrowUtils.throwIf(userAddDTO == null, ErrorCode.PARAMS_ERROR);
+        if (userAddDTO.getUserRole() == null) {
+            userAddDTO.setUserRole(UserConstants.DEFAULT_ROLE);
+        }
+        User user = new User();
+        BeanUtils.copyProperties(userAddDTO, user);
+        String encryptPassword = UserUtils.getEncryptPassword(UserConstants.DEFAULT_PASSWORD);
+        user.setUserPassword(encryptPassword);
+        boolean result = userService.save(user);
+        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+        return ResultUtils.success(user.getId());
+    }
+
+    /**
+     * 根据ID获取用户信息（仅管理员）
      *
      * @param id 用户ID
      * @return 用户信息
      */
     @GetMapping("/get")
-    public BaseResponse<UserLoginVO> getUserById(@RequestParam("id") Long id) {
-        UserLoginVO UserLoginVO = userServiceNew.getUserById(id);
-        return ResultUtils.success(UserLoginVO);
+    @AuthCheck(mustRole = UserConstants.ADMIN_ROLE)
+    public BaseResponse<User> getUserById(Long id) {
+        ThrowUtils.throwIf(id == null, ErrorCode.PARAMS_ERROR);
+        User user = userService.getById(id);
+        ThrowUtils.throwIf(user == null, ErrorCode.NOT_FOUND_ERROR);
+        return ResultUtils.success(user);
     }
 
     /**
-     * 查询用户列表
+     * 根据id获取脱敏用户信息
+     * @param id 用户id
+     * @return UserVO
+     */
+    @GetMapping("/get/vo")
+    public BaseResponse<UserVO> getUserVOById(Long id){
+        BaseResponse<User> response = getUserById(id);
+        User user = response.getData();
+        return ResultUtils.success(UserUtils.getUserVO(user));
+    }
+
+    /**
+     * 查询用户列表（仅管理员）
      *
      * @param queryDTO 查询条件
      * @return 用户列表
      */
-    @GetMapping("/list")
-    public BaseResponse<List<UserLoginVO>> listUsers(UserQueryDTO queryDTO) {
-        List<UserLoginVO> UserLoginVOList = userServiceNew.listUsers(queryDTO);
-        return ResultUtils.success(UserLoginVOList);
+    @PostMapping("/list/page/vo")
+    public BaseResponse<List<UserVO>> listUsers(@RequestBody UserQueryDTO queryDTO) {
+        ThrowUtils.throwIf(queryDTO == null, ErrorCode.PARAMS_ERROR);
+        List<UserVO> UserVOList = userService.listUsers(queryDTO);
+        return ResultUtils.success(UserVOList);
     }
 
     /**
@@ -126,22 +165,27 @@ public class UserController {
      * @return 是否更新成功
      */
     @PostMapping("/update")
-    @RequireAdmin
+    @AuthCheck(mustRole = UserConstants.ADMIN_ROLE)
     public BaseResponse<Boolean> updateUser(@RequestBody UserUpdateDTO updateDTO) {
-        boolean result = userServiceNew.updateUser(updateDTO);
+        if (updateDTO == null || updateDTO.getId() <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        boolean result = userService.updateUser(updateDTO);
         return ResultUtils.success(result);
     }
 
     /**
      * 删除用户（管理员权限）
      *
-     * @param id 用户ID
+     * @param request 用户ID
      * @return 是否删除成功
      */
     @PostMapping("/delete")
-    @RequireAdmin
-    public BaseResponse<Boolean> deleteUser(@RequestParam("id") Long id) {
-        boolean result = userServiceNew.deleteUser(id);
-        return ResultUtils.success(result);
+    @AuthCheck(mustRole = UserConstants.ADMIN_ROLE)
+    public BaseResponse<Boolean> deleteUser(@RequestParam("id") DeleteRequest request) {
+        if (request == null || request.getId() <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        return ResultUtils.success(userService.removeById(request.getId()));
     }
 }

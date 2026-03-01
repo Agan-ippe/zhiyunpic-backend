@@ -1,10 +1,14 @@
 package com.zhimo.zhiyunpic.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.zhimo.zhiyunpic.model.dto.user.UserQueryDTO;
+import com.zhimo.zhiyunpic.model.dto.user.UserUpdateDTO;
 import com.zhimo.zhiyunpic.model.entity.User;
 import com.zhimo.zhiyunpic.model.vo.user.UserLoginVO;
+import com.zhimo.zhiyunpic.model.vo.user.UserVO;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 /**
 * @author 93988
@@ -48,7 +52,22 @@ public interface UserService extends IService<User> {
      */
     boolean userLogout(HttpServletRequest request);
 
-//    endregion
-//    region 增删改查
+    //    endregion
+    //    region 增删改查
+    /**
+     * 更新用户信息
+     * @param updateDTO 更新信息封装类
+     * @return
+     */
+    boolean updateUser(UserUpdateDTO updateDTO);
+
+    /**
+     * 分页查询用户
+     * @param queryDTO
+     * @return
+     */
+    List<UserVO> listUsers(UserQueryDTO queryDTO);
+
+
 
 }
