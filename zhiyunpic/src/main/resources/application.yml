@@ -1,4 +1,13 @@
 # 公共配置文件
+server:
+  port: 8111
+  servlet:
+    context-path: /api
+    # cookie 30 天过期
+    session:
+      cookie:
+        max-age: 2592000
+#todo 数据库连接池及云存储请自行在 新建 application-dev.yml 文件中配置
 spring:
   main:
     #    解决升级Spring Boot2.6后,因依赖循环引用导致启动时报错的问题
