@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zhimo.zhiyunpic.mapper.PictureMapper">
+
+    <resultMap id="BaseResultMap" type="com.zhimo.zhiyunpic.model.entity.Picture">
+            <id property="id" column="id" />
+            <result property="url" column="url" />
+            <result property="name" column="name" />
+            <result property="introduction" column="introduction" />
+            <result property="category" column="category" />
+            <result property="tags" column="tags" />
+            <result property="picsize" column="picSize" />
+            <result property="picwidth" column="picWidth" />
+            <result property="picheight" column="picHeight" />
+            <result property="picscale" column="picScale" />
+            <result property="picformat" column="picFormat" />
+            <result property="userid" column="userId" />
+            <result property="createtime" column="createTime" />
+            <result property="edittime" column="editTime" />
+            <result property="updatetime" column="updateTime" />
+            <result property="isdelete" column="isDelete" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,url,name,introduction,category,tags,
+        picSize,picWidth,picHeight,picScale,picFormat,
+        userId,createTime,editTime,updateTime,isDelete
+    </sql>
+</mapper>
