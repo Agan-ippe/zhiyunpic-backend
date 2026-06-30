@@ -27,6 +27,9 @@ spring:
     # store-type: redis
     # 30 天过期
     timeout: 2592000
+  servlet:
+    multipart:
+      max-file-size: 10MB
 
 mybatis-plus:
   configuration:
