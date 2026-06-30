@@ -9,6 +9,7 @@ import com.zhimo.zhiyunpic.constants.user.UserConstants;
 import com.zhimo.zhiyunpic.exception.BusinessException;
 import com.zhimo.zhiyunpic.exception.ErrorCode;
 import com.zhimo.zhiyunpic.manager.CosManager;
+import com.zhimo.zhiyunpic.utils.FileUtils;
 import com.zhimo.zhiyunpic.utils.ResultUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,18 +30,16 @@ import java.io.IOException;
  * @Description 文件相关接口
  */
 @Slf4j
-@RestController
+@RestController("/file")
 public class FileController {
     @Resource
     private CosManager cosManager;
 
     /**
      * 测试文件上传
-     *
      * @param multipartFile
-     * @return
+     * @return ok
      */
-
     @AuthCheck(mustRole = UserConstants.ADMIN_ROLE)
     @PostMapping("/test/upload")
     public BaseResponse<String> testUploadFile(@RequestPart("file") MultipartFile multipartFile) {
@@ -51,6 +50,7 @@ public class FileController {
         try {
             // 上传文件
             file = File.createTempFile(filepath, null);
+            // 将前端上传的 MultipartFile 数据转移到刚创建的本地临时文件中
             multipartFile.transferTo(file);
             cosManager.uploadFile(filepath, file);
             // 返回可访问地址
@@ -59,13 +59,14 @@ public class FileController {
             log.error("file upload error, filepath = " + filepath, e);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "上传失败");
         } finally {
-            if (file != null) {
-                // 删除临时文件
-                boolean delete = file.delete();
-                if (!delete) {
-                    log.error("file delete error, filepath = {}", filepath);
-                }
-            }
+            // 删除临时文件
+            FileUtils.deleteTempFile(file);
+//            if (file != null) {
+//                boolean delete = file.delete();
+//                if (!delete) {
+//                    log.error("file delete error, filepath = {}", filepath);
+//                }
+//            }
         }
     }
 

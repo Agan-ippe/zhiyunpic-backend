@@ -47,53 +47,53 @@ public class Picture implements Serializable {
     /**
      * 图片体积
      */
-    private Long picsize;
+    private Long picSize;
 
     /**
      * 图片宽度
      */
-    private Integer picwidth;
+    private Integer picWidth;
 
     /**
      * 图片高度
      */
-    private Integer picheight;
+    private Integer picHeight;
 
     /**
      * 图片宽高比例
      */
-    private Double picscale;
+    private Double picScale;
 
     /**
      * 图片格式
      */
-    private String picformat;
+    private String picFormat;
 
     /**
      * 创建用户 id
      */
-    private Long userid;
+    private Long userId;
 
     /**
      * 创建时间
      */
-    private Date createtime;
+    private Date createTime;
 
     /**
      * 编辑时间
      */
-    private Date edittime;
+    private Date editTime;
 
     /**
      * 更新时间
      */
-    private Date updatetime;
+    private Date updateTime;
 
     /**
      * 是否删除
      */
     @TableLogic
-    private Integer isdelete;
+    private Integer isDelete;
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;

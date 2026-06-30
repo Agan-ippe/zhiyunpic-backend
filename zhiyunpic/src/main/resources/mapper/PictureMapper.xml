@@ -11,16 +11,16 @@
             <result property="introduction" column="introduction" />
             <result property="category" column="category" />
             <result property="tags" column="tags" />
-            <result property="picsize" column="picSize" />
-            <result property="picwidth" column="picWidth" />
-            <result property="picheight" column="picHeight" />
-            <result property="picscale" column="picScale" />
-            <result property="picformat" column="picFormat" />
-            <result property="userid" column="userId" />
-            <result property="createtime" column="createTime" />
-            <result property="edittime" column="editTime" />
-            <result property="updatetime" column="updateTime" />
-            <result property="isdelete" column="isDelete" />
+        <result property="picSize" column="picSize"/>
+        <result property="picWidth" column="picWidth"/>
+        <result property="picHeight" column="picHeight"/>
+        <result property="picScale" column="picScale"/>
+        <result property="picFormat" column="picFormat"/>
+        <result property="userId" column="userId"/>
+        <result property="createTime" column="createTime"/>
+        <result property="editTime" column="editTime"/>
+        <result property="updateTime" column="updateTime"/>
+        <result property="isDelete" column="isDelete"/>
     </resultMap>
 
     <sql id="Base_Column_List">
