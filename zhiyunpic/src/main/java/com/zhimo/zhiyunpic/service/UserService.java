@@ -9,7 +9,6 @@ import com.zhimo.zhiyunpic.model.vo.user.UserLoginVO;
 import com.zhimo.zhiyunpic.model.vo.user.UserVO;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.List;
 
 /**
 * @author 93988
@@ -69,6 +68,10 @@ public interface UserService extends IService<User> {
      */
     Page<UserVO> listUsers(UserQueryDTO queryDTO);
 
-
-
+    /**
+     * 获取用户响应包装类
+     * @param user
+     * @return
+     */
+    UserVO getUserVO(User user);
 }

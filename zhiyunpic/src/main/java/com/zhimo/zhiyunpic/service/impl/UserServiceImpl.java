@@ -5,7 +5,6 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.zhimo.zhiyunpic.common.PageRequest;
 import com.zhimo.zhiyunpic.constants.user.UserConstants;
 import com.zhimo.zhiyunpic.exception.BusinessException;
 import com.zhimo.zhiyunpic.exception.ErrorCode;
@@ -21,11 +20,9 @@ import com.zhimo.zhiyunpic.utils.ThrowUtils;
 import com.zhimo.zhiyunpic.utils.UserUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.util.DigestUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
 * @author 93988
@@ -154,6 +151,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         List<UserVO> userVOList = UserUtils.getUserVOList(userPage.getRecords());
         userVOPage.setRecords(userVOList);
         return userVOPage;
+    }
+
+    @Override
+    public UserVO getUserVO(User user) {
+        if (user == null) {
+            return null;
+        }
+        UserVO userVO = new UserVO();
+        BeanUtil.copyProperties(user, userVO);
+        return userVO;
     }
 
 }
