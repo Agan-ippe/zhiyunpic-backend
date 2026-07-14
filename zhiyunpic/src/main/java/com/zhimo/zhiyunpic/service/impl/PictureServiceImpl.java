@@ -6,19 +6,24 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.zhimo.zhiyunpic.exception.BusinessException;
 import com.zhimo.zhiyunpic.exception.ErrorCode;
 import com.zhimo.zhiyunpic.manager.FileManager;
 import com.zhimo.zhiyunpic.mapper.PictureMapper;
 import com.zhimo.zhiyunpic.model.dto.file.UploadPictureDTO;
 import com.zhimo.zhiyunpic.model.dto.picture.PictureQueryDTO;
+import com.zhimo.zhiyunpic.model.dto.picture.PictureReviewDTO;
 import com.zhimo.zhiyunpic.model.dto.picture.PictureUploadDTO;
 import com.zhimo.zhiyunpic.model.entity.Picture;
 import com.zhimo.zhiyunpic.model.entity.User;
+import com.zhimo.zhiyunpic.model.enums.PictureReviewStatusEnum;
 import com.zhimo.zhiyunpic.model.vo.picture.PictureVO;
 import com.zhimo.zhiyunpic.model.vo.user.UserVO;
 import com.zhimo.zhiyunpic.service.PictureService;
 import com.zhimo.zhiyunpic.service.UserService;
 import com.zhimo.zhiyunpic.utils.ThrowUtils;
+import com.zhimo.zhiyunpic.utils.UserUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -45,6 +50,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     @Resource
     private UserService userService;
 
+
+    // regin 增删改查
     @Override
     public PictureVO uploadPicture(MultipartFile multipartFile, PictureUploadDTO pictureUploadDTO, User loginUser) {
         // 校验参数
@@ -56,12 +63,12 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         }
         // 更新则需要判断图片是否存在
         if (pictureId != null) {
-//            QueryWrapper<Picture> queryWrapper = new QueryWrapper<>();
-//            queryWrapper.eq("id", pictureId);
-//            boolean exists1 = this.exists(queryWrapper);
-            // 以上为lambda表达式的对照
-            boolean exists = this.lambdaQuery().eq(Picture::getId, pictureId).exists();
-            ThrowUtils.throwIf(!exists, ErrorCode.NOT_FOUND_ERROR, "图片不存在");
+            Picture oldPicture = this.getById(pictureId);
+            ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR, "图片不存在");
+            // 仅本人或管理员可编辑图片
+            if (oldPicture.getUserId().equals(loginUser.getId()) && UserUtils.isAdmin(loginUser)) {
+                throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
+            }
         }
         // 上传图片
         // 将所有的图片都放在public目录下，并将用户上传的图片归类至对应的用户ID中
@@ -77,6 +84,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         picture.setPicScale(uploadPictureDTO.getPicScale());
         picture.setPicFormat(uploadPictureDTO.getPicFormat());
         picture.setUserId(loginUser.getId());
+        // 补充审核参数
+        this.fillReviewParams(picture,loginUser);
         // 如果 pictureId 不为空则更新，反之则新增
         if (pictureId != null) {
             // 更新需要补充id 和 编辑时间
@@ -89,59 +98,6 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         return PictureVO.objToVo(picture);
     }
 
-    @Override
-    public QueryWrapper<Picture> getQueryWrapper(PictureQueryDTO pictureQueryDTO) {
-        QueryWrapper<Picture> queryWrapper = new QueryWrapper<>();
-        if (pictureQueryDTO == null) {
-            return queryWrapper;
-        }
-        // 从对象中取值
-        Long id = pictureQueryDTO.getId();
-        String name = pictureQueryDTO.getName();
-        String introduction = pictureQueryDTO.getIntroduction();
-        String category = pictureQueryDTO.getCategory();
-        List<String> tags = pictureQueryDTO.getTags();
-        Long picSize = pictureQueryDTO.getPicSize();
-        Integer picWidth = pictureQueryDTO.getPicWidth();
-        Integer picHeight = pictureQueryDTO.getPicHeight();
-        Double picScale = pictureQueryDTO.getPicScale();
-        String picFormat = pictureQueryDTO.getPicFormat();
-        String searchText = pictureQueryDTO.getSearchText();
-        Long userId = pictureQueryDTO.getUserId();
-        String sortField = pictureQueryDTO.getSortField();
-        String sortOrder = pictureQueryDTO.getSortOrder();
-        // 从多字段中搜索
-        // searchText 支持同时从 name 和introduction 中检索，使用 qw 中的or语法构造查询条件
-        if (StrUtil.isNotBlank(searchText)) {
-            // 需要拼接查询条件
-            /* and (name like %xxx% or introduction like %xxx%) */
-            queryWrapper.and(qw -> qw.like("name", searchText)
-                    .or()
-                    .like("introduction", searchText)
-            );
-        }
-        queryWrapper.eq(ObjUtil.isNotEmpty(id), "id", id);
-        queryWrapper.eq(ObjUtil.isNotEmpty(userId), "userId", userId);
-        queryWrapper.like(StrUtil.isNotBlank(name), "name", name);
-        queryWrapper.like(StrUtil.isNotBlank(introduction), "introduction", introduction);
-        queryWrapper.like(StrUtil.isNotBlank(picFormat), "picFormat", picFormat);
-        queryWrapper.eq(StrUtil.isNotBlank(category), "category", category);
-        queryWrapper.eq(ObjUtil.isNotEmpty(picWidth), "picWidth", picWidth);
-        queryWrapper.eq(ObjUtil.isNotEmpty(picHeight), "picHeight", picHeight);
-        queryWrapper.eq(ObjUtil.isNotEmpty(picSize), "picSize", picSize);
-        queryWrapper.eq(ObjUtil.isNotEmpty(picScale), "picScale", picScale);
-        // JSON 数组查询
-        // 由于 tags 在数据库中是JSON格式的字符串，如果前端需要传多个 tag(必须同时存在才能查到)
-        // 需要遍历 tags 数组，每个标签都使用 like 模糊查询，将这些条件组合在一起
-        if (CollUtil.isNotEmpty(tags)) {
-            for (String tag : tags) {
-                queryWrapper.like("tags", "\"" + tag + "\"");
-            }
-        }
-        // 排序
-        queryWrapper.orderBy(StrUtil.isNotEmpty(sortField), sortOrder.equals("ascend"), sortField);
-        return queryWrapper;
-    }
 
     @Override
     public PictureVO getPictureVO(Picture picture, HttpServletRequest request) {
@@ -187,6 +143,97 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         pictureVOPage.setRecords(pictureVOList);
         return pictureVOPage;
     }
+    // endregion
+
+    // region 审核
+    @Override
+    public void doPictureReview(PictureReviewDTO pictureReviewDTO, User loginUser) {
+        // 校验参数
+        ThrowUtils.throwIf(pictureReviewDTO == null, ErrorCode.PARAMS_ERROR);
+        Long id = pictureReviewDTO.getId();
+        Integer reviewStatus = pictureReviewDTO.getReviewStatus();
+        PictureReviewStatusEnum reviewStatusEnum = PictureReviewStatusEnum.getEnumByValue(reviewStatus);
+        if (id == null || reviewStatusEnum == null || PictureReviewStatusEnum.REVIEWING.equals(reviewStatusEnum)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        // 判断图片是否存在
+        Picture oldPicture = this.getById(id);
+        ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR);
+        // 校验审核状态是否重复
+        if (oldPicture.getReviewStatus().equals(reviewStatus)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "请勿重复审核");
+        }
+        // 数据库操作
+        Picture updatePicture = new Picture();
+        BeanUtils.copyProperties(pictureReviewDTO, updatePicture);
+        updatePicture.setReviewerId(loginUser.getId());
+        updatePicture.setReviewTime(new Date());
+        boolean result = this.updateById(updatePicture);
+        ThrowUtils.throwIf(!result, ErrorCode.DATABASE_ERROR);
+    }
+    // endregion
+
+    // region 通用方法
+    @Override
+    public QueryWrapper<Picture> getQueryWrapper(PictureQueryDTO pictureQueryDTO) {
+        QueryWrapper<Picture> queryWrapper = new QueryWrapper<>();
+        if (pictureQueryDTO == null) {
+            return queryWrapper;
+        }
+        // 从对象中取值
+        Long id = pictureQueryDTO.getId();
+        String name = pictureQueryDTO.getName();
+        String introduction = pictureQueryDTO.getIntroduction();
+        String category = pictureQueryDTO.getCategory();
+        List<String> tags = pictureQueryDTO.getTags();
+        Long picSize = pictureQueryDTO.getPicSize();
+        Integer picWidth = pictureQueryDTO.getPicWidth();
+        Integer picHeight = pictureQueryDTO.getPicHeight();
+        Double picScale = pictureQueryDTO.getPicScale();
+        String picFormat = pictureQueryDTO.getPicFormat();
+        String searchText = pictureQueryDTO.getSearchText();
+        Long userId = pictureQueryDTO.getUserId();
+        String sortField = pictureQueryDTO.getSortField();
+        String sortOrder = pictureQueryDTO.getSortOrder();
+        Integer reviewStatus = pictureQueryDTO.getReviewStatus();
+        String reviewMessage = pictureQueryDTO.getReviewMessage();
+        Long reviewerId = pictureQueryDTO.getReviewerId();
+        // 从多字段中搜索
+        // searchText 支持同时从 name 和introduction 中检索，使用 qw 中的or语法构造查询条件
+        if (StrUtil.isNotBlank(searchText)) {
+            // 需要拼接查询条件
+            /* and (name like %xxx% or introduction like %xxx%) */
+            queryWrapper.and(qw -> qw.like("name", searchText)
+                    .or()
+                    .like("introduction", searchText)
+            );
+        }
+        queryWrapper.eq(ObjUtil.isNotEmpty(id), "id", id);
+        queryWrapper.eq(ObjUtil.isNotEmpty(userId), "userId", userId);
+        queryWrapper.like(StrUtil.isNotBlank(name), "name", name);
+        queryWrapper.like(StrUtil.isNotBlank(introduction), "introduction", introduction);
+        queryWrapper.like(StrUtil.isNotBlank(picFormat), "picFormat", picFormat);
+        queryWrapper.eq(StrUtil.isNotBlank(category), "category", category);
+        queryWrapper.eq(ObjUtil.isNotEmpty(picWidth), "picWidth", picWidth);
+        queryWrapper.eq(ObjUtil.isNotEmpty(picHeight), "picHeight", picHeight);
+        queryWrapper.eq(ObjUtil.isNotEmpty(picSize), "picSize", picSize);
+        queryWrapper.eq(ObjUtil.isNotEmpty(picScale), "picScale", picScale);
+        queryWrapper.eq(ObjUtil.isNotEmpty(reviewStatus), "reviewStatus", reviewStatus);
+        queryWrapper.like(StrUtil.isNotBlank(reviewMessage), "reviewMessage", reviewMessage);
+        queryWrapper.eq(ObjUtil.isNotEmpty(reviewerId), "reviewerId", reviewerId);
+
+        // JSON 数组查询
+        // 由于 tags 在数据库中是JSON格式的字符串，如果前端需要传多个 tag(必须同时存在才能查到)
+        // 需要遍历 tags 数组，每个标签都使用 like 模糊查询，将这些条件组合在一起
+        if (CollUtil.isNotEmpty(tags)) {
+            for (String tag : tags) {
+                queryWrapper.like("tags", "\"" + tag + "\"");
+            }
+        }
+        // 排序
+        queryWrapper.orderBy(StrUtil.isNotEmpty(sortField), sortOrder.equals("ascend"), sortField);
+        return queryWrapper;
+    }
 
     @Override
     public void validPicture(Picture picture) {
@@ -205,6 +252,21 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         }
     }
 
+    @Override
+    public void fillReviewParams(Picture picture, User loginUser){
+        if (UserUtils.isAdmin(loginUser)) {
+            // 管理员直接通过
+            picture.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
+            picture.setReviewTime(new Date());
+            picture.setReviewerId(loginUser.getId());
+            picture.setReviewMessage("管理员自动过审");
+        }else {
+            // 非管理员用户无论是编辑还是创建都是 待审核 状态
+            picture.setReviewStatus(PictureReviewStatusEnum.REVIEWING.getValue());
+        }
+    }
+
+    // endregion
 
 }
 

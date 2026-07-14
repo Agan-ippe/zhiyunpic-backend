@@ -2,10 +2,11 @@ package com.zhimo.zhiyunpic.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.zhimo.zhiyunpic.model.dto.picture.PictureQueryDTO;
+import com.zhimo.zhiyunpic.model.dto.picture.PictureReviewDTO;
 import com.zhimo.zhiyunpic.model.dto.picture.PictureUploadDTO;
 import com.zhimo.zhiyunpic.model.entity.Picture;
-import com.baomidou.mybatisplus.extension.service.IService;
 import com.zhimo.zhiyunpic.model.entity.User;
 import com.zhimo.zhiyunpic.model.vo.picture.PictureVO;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,6 +20,7 @@ import javax.servlet.http.HttpServletRequest;
 */
 public interface PictureService extends IService<Picture> {
 
+    // region 增删改查
     /**
      * 上传图片
      *
@@ -30,14 +32,6 @@ public interface PictureService extends IService<Picture> {
     PictureVO uploadPicture(MultipartFile multipartFile,
                             PictureUploadDTO pictureUploadDTO,
                             User loginUser);
-
-
-    /**
-     * 将查询请求类转为QueryWrapper对象
-     * @param pictureQueryDTO
-     * @return
-     */
-    QueryWrapper<Picture> getQueryWrapper(PictureQueryDTO pictureQueryDTO);
 
     /**
      * 获取图片响应包装类
@@ -55,9 +49,35 @@ public interface PictureService extends IService<Picture> {
      */
     Page<PictureVO> getPictureVOPage(Page<Picture> picturePage, HttpServletRequest request);
 
+    // endregion
+    // region 审核
+    /**
+     * 图片审核
+     * @param pictureReviewDTO 图片审核请求包装类
+     * @param loginUser        当前登录用户
+     */
+    void doPictureReview(PictureReviewDTO pictureReviewDTO, User loginUser);
+    // endregion
+    // region 通用方法
+    /**
+     * 将查询请求类转为QueryWrapper对象
+     * @param pictureQueryDTO
+     * @return
+     */
+    QueryWrapper<Picture> getQueryWrapper(PictureQueryDTO pictureQueryDTO);
+
     /**
      * 数据校验，用于更新和修改
      * @param picture
      */
     void validPicture(Picture picture);
+
+    /**
+     * 填充审核参数
+     * @param picture 图片实体类
+     * @param loginUser 当前登录用户
+     */
+    void fillReviewParams(Picture picture, User loginUser);
+    // endregion
+
 }

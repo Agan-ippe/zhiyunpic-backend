@@ -8,12 +8,10 @@ import com.zhimo.zhiyunpic.common.DeleteRequest;
 import com.zhimo.zhiyunpic.constants.user.UserConstants;
 import com.zhimo.zhiyunpic.exception.BusinessException;
 import com.zhimo.zhiyunpic.exception.ErrorCode;
-import com.zhimo.zhiyunpic.model.dto.picture.PictureEditDTO;
-import com.zhimo.zhiyunpic.model.dto.picture.PictureQueryDTO;
-import com.zhimo.zhiyunpic.model.dto.picture.PictureUpdateDTO;
-import com.zhimo.zhiyunpic.model.dto.picture.PictureUploadDTO;
+import com.zhimo.zhiyunpic.model.dto.picture.*;
 import com.zhimo.zhiyunpic.model.entity.Picture;
 import com.zhimo.zhiyunpic.model.entity.User;
+import com.zhimo.zhiyunpic.model.enums.PictureReviewStatusEnum;
 import com.zhimo.zhiyunpic.model.vo.picture.PictureTagCategory;
 import com.zhimo.zhiyunpic.model.vo.picture.PictureVO;
 import com.zhimo.zhiyunpic.service.PictureService;
@@ -57,7 +55,7 @@ public class PictureController {
      * @return
      */
     @PostMapping("/upload")
-    @AuthCheck(mustRole = UserConstants.ADMIN_ROLE)
+//    @AuthCheck(mustRole = UserConstants.ADMIN_ROLE)
     public BaseResponse<PictureVO> uploadPicture(
             @RequestPart("file") MultipartFile multipartFile,
             PictureUploadDTO pictureUploadDTO,
@@ -100,7 +98,7 @@ public class PictureController {
      */
     @PostMapping("/update")
     @AuthCheck(mustRole = UserConstants.ADMIN_ROLE)
-    public BaseResponse<Boolean> updatePicture(@RequestBody PictureUpdateDTO pictureUpdateDTO){
+    public BaseResponse<Boolean> updatePicture(@RequestBody PictureUpdateDTO pictureUpdateDTO, HttpServletRequest request){
         if (pictureUpdateDTO == null || pictureUpdateDTO.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -113,6 +111,9 @@ public class PictureController {
         Long id = pictureUpdateDTO.getId();
         Picture oldPicture = pictureService.getById(id);
         ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR);
+        // 补充审核参数
+        User loginUser = userService.getLoginUser(request);
+        pictureService.fillReviewParams(picture,loginUser);
         boolean result = pictureService.updateById(picture);
         ThrowUtils.throwIf(!result, ErrorCode.DATABASE_ERROR);
         return ResultUtils.success(true);
@@ -145,6 +146,8 @@ public class PictureController {
         if (!oldPicture.getUserId().equals(loginUser.getId()) && !UserUtils.isAdmin(loginUser)) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
         }
+        // 补充审核参数
+        pictureService.fillReviewParams(picture,loginUser);
         boolean result = pictureService.updateById(picture);
         ThrowUtils.throwIf(!result, ErrorCode.DATABASE_ERROR);
         return ResultUtils.success(true);
@@ -194,16 +197,37 @@ public class PictureController {
         return ResultUtils.success(picturePage);
     }
 
+    /**
+     * 分页查询图片封装类
+     * @param pictureQueryDTO
+     * @param request
+     * @return
+     */
     @PostMapping("/list/page/vo")
     public BaseResponse<Page<PictureVO>> listPictureVOByPage(@RequestBody PictureQueryDTO pictureQueryDTO,HttpServletRequest request){
         long current = pictureQueryDTO.getCurrent();
         long pageSize = pictureQueryDTO.getPageSize();
         // 限制爬虫
         ThrowUtils.throwIf(pageSize > 20 , ErrorCode.OPERATION_ERROR);
+        // 普通用户默认只能查看已过审的数据
+        pictureQueryDTO.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
+        // 查询数据库
         Page<Picture> picturePage = pictureService.page(new Page<>(current, pageSize),
                 pictureService.getQueryWrapper(pictureQueryDTO));
         return ResultUtils.success(pictureService.getPictureVOPage(picturePage,request));
     }
+    // endregion
+
+    // region 图片审核
+    @PostMapping("/review")
+    @AuthCheck(mustRole = UserConstants.ADMIN_ROLE)
+    public BaseResponse<Boolean> doPictureReview(@RequestBody PictureReviewDTO pictureReviewDTO, HttpServletRequest request){
+        ThrowUtils.throwIf(pictureReviewDTO == null, ErrorCode.PARAMS_ERROR);
+        User loginUser = userService.getLoginUser(request);
+        pictureService.doPictureReview(pictureReviewDTO, loginUser);
+        return ResultUtils.success(true);
+    }
+
     // endregion
 
     @GetMapping("/tag_category")
