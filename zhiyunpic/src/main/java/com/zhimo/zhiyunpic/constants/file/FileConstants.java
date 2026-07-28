@@ -15,8 +15,12 @@ public interface FileConstants {
      */
     long ONE_MB = 1024 * 1024;
 
+    long UPLOAD_FILE_MAX_SIZE = 10 * ONE_MB;
+
     /**
      * 原始数据文件后缀
      */
     List<String> RAW_DATA_SUFFIX_LIST = Arrays.asList("jpeg", "png", "jpg", "webp", "gif");
+
+    List<String> ALLOW_CONTENT_TYPES = Arrays.asList("image/jpeg", "image/jpg", "image/png", "image/webp");
 }
