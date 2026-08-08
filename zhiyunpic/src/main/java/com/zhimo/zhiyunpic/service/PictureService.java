@@ -9,7 +9,6 @@ import com.zhimo.zhiyunpic.model.dto.picture.PictureUploadDTO;
 import com.zhimo.zhiyunpic.model.entity.Picture;
 import com.zhimo.zhiyunpic.model.entity.User;
 import com.zhimo.zhiyunpic.model.vo.picture.PictureVO;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -24,12 +23,12 @@ public interface PictureService extends IService<Picture> {
     /**
      * 上传图片
      *
-     * @param multipartFile    上传的文件
+     * @param inputSource    上传的文件
      * @param pictureUploadDTO 图片上传请求包装类
      * @param loginUser        当前登录用户
      * @return PictureVO 图片响应包装类
      */
-    PictureVO uploadPicture(MultipartFile multipartFile,
+    PictureVO uploadPicture(Object inputSource,
                             PictureUploadDTO pictureUploadDTO,
                             User loginUser);
 

@@ -9,6 +9,9 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.zhimo.zhiyunpic.exception.BusinessException;
 import com.zhimo.zhiyunpic.exception.ErrorCode;
 import com.zhimo.zhiyunpic.manager.FileManager;
+import com.zhimo.zhiyunpic.manager.upload.FilePictureUpload;
+import com.zhimo.zhiyunpic.manager.upload.PictureUploadTemplate;
+import com.zhimo.zhiyunpic.manager.upload.UrlPictureUpload;
 import com.zhimo.zhiyunpic.mapper.PictureMapper;
 import com.zhimo.zhiyunpic.model.dto.file.UploadPictureDTO;
 import com.zhimo.zhiyunpic.model.dto.picture.PictureQueryDTO;
@@ -25,7 +28,6 @@ import com.zhimo.zhiyunpic.utils.ThrowUtils;
 import com.zhimo.zhiyunpic.utils.UserUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -50,11 +52,19 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     @Resource
     private UserService userService;
 
+    @Resource
+    private FilePictureUpload filePictureUpload;
+
+    @Resource
+    private UrlPictureUpload urlPictureUpload;
+
+
 
     // regin 增删改查
     @Override
-    public PictureVO uploadPicture(MultipartFile multipartFile, PictureUploadDTO pictureUploadDTO, User loginUser) {
+    public PictureVO uploadPicture(Object inputSource, PictureUploadDTO pictureUploadDTO, User loginUser) {
         // 校验参数
+        ThrowUtils.throwIf(inputSource == null, ErrorCode.PARAMS_ERROR, "文件为空");
         ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR);
         // 判断是新增还是更新
         Long pictureId = null;
@@ -73,7 +83,12 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         // 上传图片
         // 将所有的图片都放在public目录下，并将用户上传的图片归类至对应的用户ID中
         String uploadPathPrefix = String.format("public/%s/", loginUser.getId());
-        UploadPictureDTO uploadPictureDTO = fileManager.uploadPicture(multipartFile, uploadPathPrefix);
+        // 根据 inputSource 类型选择不同的上传方式
+        PictureUploadTemplate pictureUploadTemplate = filePictureUpload;
+        if (inputSource instanceof String) {
+            pictureUploadTemplate = urlPictureUpload;
+        }
+        UploadPictureDTO uploadPictureDTO = pictureUploadTemplate.uploadPicture(inputSource, uploadPathPrefix);
         // 构造入库图片信息
         Picture picture = new Picture();
         picture.setUrl(uploadPictureDTO.getUrl());
@@ -213,13 +228,13 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         queryWrapper.like(StrUtil.isNotBlank(name), "name", name);
         queryWrapper.like(StrUtil.isNotBlank(introduction), "introduction", introduction);
         queryWrapper.like(StrUtil.isNotBlank(picFormat), "picFormat", picFormat);
+        queryWrapper.like(StrUtil.isNotBlank(reviewMessage), "reviewMessage", reviewMessage);
         queryWrapper.eq(StrUtil.isNotBlank(category), "category", category);
         queryWrapper.eq(ObjUtil.isNotEmpty(picWidth), "picWidth", picWidth);
         queryWrapper.eq(ObjUtil.isNotEmpty(picHeight), "picHeight", picHeight);
         queryWrapper.eq(ObjUtil.isNotEmpty(picSize), "picSize", picSize);
         queryWrapper.eq(ObjUtil.isNotEmpty(picScale), "picScale", picScale);
         queryWrapper.eq(ObjUtil.isNotEmpty(reviewStatus), "reviewStatus", reviewStatus);
-        queryWrapper.like(StrUtil.isNotBlank(reviewMessage), "reviewMessage", reviewMessage);
         queryWrapper.eq(ObjUtil.isNotEmpty(reviewerId), "reviewerId", reviewerId);
 
         // JSON 数组查询

@@ -17,10 +17,20 @@ import java.io.Serializable;
 @AllArgsConstructor
 public class PictureUploadDTO implements Serializable {
 
-    private static final long serialVersionUID = 4044668964827028747L;
     /**
-     * 图片 id
+     * 图片 id（用于修改）
      */
     private Long id;
 
+    /**
+     * 文件地址
+     */
+    private String fileUrl;
+
+    /**
+     * 图片名称
+     */
+    private String picName;
+
+    private static final long serialVersionUID = 1L;
 }
