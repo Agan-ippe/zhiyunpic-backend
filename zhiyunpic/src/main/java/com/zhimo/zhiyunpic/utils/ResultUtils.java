@@ -10,6 +10,10 @@ import com.zhimo.zhiyunpic.exception.ErrorCode;
  * @Description 响应工具类
  */
 public class ResultUtils {
+    private ResultUtils() {
+        /* This utility class should not be instantiated */
+    }
+
 
     /**
      * 成功

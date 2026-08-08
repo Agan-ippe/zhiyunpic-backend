@@ -10,6 +10,10 @@ import com.zhimo.zhiyunpic.exception.ErrorCode;
  * @Description 抛异常工具类
  */
 public class ThrowUtils {
+    private ThrowUtils() {
+        /* This utility class should not be instantiated */
+    }
+
 
     /**
      * 条件成立则抛异常

@@ -26,6 +26,10 @@ import java.util.stream.Collectors;
  * @Description 用户工具类
  */
 public class UserUtils {
+    private UserUtils() {
+        /* This utility class should not be instantiated */
+    }
+
 
     /**
      * 获取当前登录用户
