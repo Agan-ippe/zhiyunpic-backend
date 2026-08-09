@@ -22,5 +22,5 @@ public interface FileConstants {
      */
     List<String> RAW_DATA_SUFFIX_LIST = Arrays.asList("jpeg", "png", "jpg", "webp", "gif");
 
-    List<String> ALLOW_CONTENT_TYPES = Arrays.asList("image/jpeg", "image/jpg", "image/png", "image/webp");
+    List<String> ALLOW_CONTENT_TYPES = Arrays.asList("image/jpeg", "image/jpg", "image/png", "image/webp", "image/avif");
 }

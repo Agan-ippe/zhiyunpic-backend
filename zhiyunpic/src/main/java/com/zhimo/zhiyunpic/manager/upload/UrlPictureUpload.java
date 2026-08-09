@@ -71,8 +71,14 @@ public class UrlPictureUpload extends PictureUploadTemplate {
     protected String getOriginalFilename(Object inputSource) {
         String fileUrl = (String) inputSource;
         // https://vcg05.cfp.cn/creative/vcg/nowater800/new/VCG211292977057.jpg?x-oss-process=image/format,webp
+        // https://cdn.xiaolincoding.com//picgo/a50d417069e2b228c2f6cb158dcd52cb.jpeg
+        // https://static.www.tencent.com/uploads/2026/07/06/10c8b5b34b4793c92e448b2656379b6e.png!article.cover
+        // https://i0.hdslb.com/bfs/face/781f387583f8aba6b6c450a213f7cb33ac43cb0d.jpg@240w_240h_1c_1s_!web-avatar-nav.avif
         // 1. 去除 URL 查询参数 (如 ?x-oss-process=image/format,webp)
         String urlWithoutParams = fileUrl.split("\\?")[0];
+        // 去除 URL 路径末尾的图片处理样式标识 (如 !article.cover)
+        urlWithoutParams = urlWithoutParams.split("!")[0];
+        urlWithoutParams = urlWithoutParams.split("@")[0];
         // 2. 获取路径的最后一部分 (如 VCG211292977057.jpg)
         String fileNameWithExt = urlWithoutParams.substring(urlWithoutParams.lastIndexOf("/") + 1);
         // 3. 截取最后一位小数点之前的字符串作为主文件名
