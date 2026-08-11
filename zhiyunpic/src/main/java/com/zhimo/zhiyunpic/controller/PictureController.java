@@ -235,6 +235,13 @@ public class PictureController {
     // endregion
 
     // region 图片审核
+
+    /**
+     * 审核图片（仅管理员）
+     * @param pictureReviewDTO
+     * @param request
+     * @return
+     */
     @PostMapping("/review")
     @AuthCheck(mustRole = UserConstants.ADMIN_ROLE)
     public BaseResponse<Boolean> doPictureReview(@RequestBody PictureReviewDTO pictureReviewDTO, HttpServletRequest request){
@@ -245,6 +252,25 @@ public class PictureController {
     }
 
     // endregion
+
+    /**
+     * 爬取图片并批量上传
+     * @param pictureUploadByBatchDTO
+     * @param request
+     * @return
+     */
+    @PostMapping("/upload/batch")
+    @AuthCheck(mustRole = UserConstants.ADMIN_ROLE)
+    public BaseResponse<Integer> uploadPictureByBatch(
+            @RequestBody PictureUploadByBatchDTO pictureUploadByBatchDTO,
+            HttpServletRequest request
+    ) {
+        ThrowUtils.throwIf(pictureUploadByBatchDTO == null, ErrorCode.PARAMS_ERROR);
+        User loginUser = userService.getLoginUser(request);
+        int uploadCount = pictureService.uploadPictureByBatch(pictureUploadByBatchDTO, loginUser);
+        return ResultUtils.success(uploadCount);
+    }
+
 
     @GetMapping("/tag_category")
     public BaseResponse<PictureTagCategory> listPictureTagCategory() {
