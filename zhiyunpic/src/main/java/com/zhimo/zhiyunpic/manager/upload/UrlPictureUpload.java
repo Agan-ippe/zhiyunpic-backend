@@ -83,10 +83,10 @@ public class UrlPictureUpload extends PictureUploadTemplate {
         // 3. 截取最后一位小数点之前的字符串作为主文件名
         // https://tse1-mm.cn.bing.net/th/id/OIP-C.WJrTnBO6PFi5YnzqT8d-KwHaG7
         int lastDotIndex = fileNameWithExt.lastIndexOf(".");
-        String suffix = fileNameWithExt.substring(lastDotIndex + 1);
-        // 如果后缀包含合法图片后缀
-        if (RAW_DATA_SUFFIX_LIST.contains(suffix.toLowerCase())){
-            if (lastDotIndex > 0) {
+        if (lastDotIndex > 0) {
+            String suffix = fileNameWithExt.substring(lastDotIndex + 1);
+            // 如果后缀包含合法图片后缀
+            if (RAW_DATA_SUFFIX_LIST.contains(suffix.toLowerCase())) {
                 String mainName = fileNameWithExt.substring(0, lastDotIndex);
                 // 4. 拼接后缀，返回完整文件名 (如 VCG211292977057.jpg)
                 return mainName + suffix;
