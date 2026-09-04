@@ -2,10 +2,13 @@ package com.zhimo.zhiyunpic.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjUtil;
+import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.github.benmanes.caffeine.cache.Cache;
 import com.zhimo.zhiyunpic.exception.BusinessException;
 import com.zhimo.zhiyunpic.exception.ErrorCode;
 import com.zhimo.zhiyunpic.manager.upload.FilePictureUpload;
@@ -32,7 +35,10 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.BeanUtils;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
+import org.springframework.util.DigestUtils;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -41,6 +47,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static com.zhimo.zhiyunpic.utils.PictureUtils.buildPicture;
@@ -63,6 +70,10 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     @Resource
     private UrlPictureUpload urlPictureUpload;
+    @Resource
+    private Cache<String, String> caffeineCache;
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
 
 
 
@@ -337,8 +348,48 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         }
         return uploadCount;
     }
-
     // endregion
+
+    @Override
+    public Page<PictureVO> getPictureVOPageWithCache(PictureQueryDTO pictureQueryDTO, HttpServletRequest request) {
+        long current = pictureQueryDTO.getCurrent();
+        long pageSize = pictureQueryDTO.getPageSize();
+
+        String queryCondition = JSONUtil.toJsonStr(pictureQueryDTO);
+        String hashKey = DigestUtils.md5DigestAsHex(queryCondition.getBytes());
+        String cacheKey = String.format("zhiyunpic:listPictureVOByPageWithCache:%s", hashKey);
+        Page<PictureVO> cachePage = null;
+        // 先查询 Caffeine 本地缓存
+        String cacheValue = caffeineCache.getIfPresent(cacheKey);
+        if (cacheValue != null) {
+            // 缓存命中,直接返回
+            cachePage = JSONUtil.toBean(cacheValue, Page.class);
+            return cachePage;
+        }
+        // 本地缓存未命中，查询Redis
+        ValueOperations<String, String> opsForValue = stringRedisTemplate.opsForValue();
+        cacheValue = opsForValue.get(cacheKey);
+        if (cacheValue != null) {
+            // 缓存命中,更新一下本地缓存,并返回结果
+            caffeineCache.put(cacheKey, cacheValue);
+            cachePage = JSONUtil.toBean(cacheValue, Page.class);
+            return cachePage;
+        }
+        // 查询数据库
+        Page<Picture> picturePage = this.page(new Page<>(current, pageSize),
+                this.getQueryWrapper(pictureQueryDTO));
+        cachePage = this.getPictureVOPage(picturePage, request);
+        // 更新 Redis缓存 和 Caffeine本地缓存
+        String cacheSource = JSONUtil.toJsonStr(cachePage);
+        // 放入本地缓存
+        caffeineCache.put(cacheKey, cacheSource);
+        // 放入Redis
+        int cacheExpireTime = 60 * 30 + RandomUtil.randomInt(0, 60 * 10);
+        opsForValue.set(cacheKey, cacheSource, cacheExpireTime, TimeUnit.SECONDS);
+        return cachePage;
+    }
+
+
 
 }
 

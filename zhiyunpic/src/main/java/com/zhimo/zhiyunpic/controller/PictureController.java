@@ -2,6 +2,7 @@ package com.zhimo.zhiyunpic.controller;
 
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.github.benmanes.caffeine.cache.Cache;
 import com.zhimo.zhiyunpic.annotation.AuthCheck;
 import com.zhimo.zhiyunpic.common.BaseResponse;
 import com.zhimo.zhiyunpic.common.DeleteRequest;
@@ -21,6 +22,7 @@ import com.zhimo.zhiyunpic.utils.ThrowUtils;
 import com.zhimo.zhiyunpic.utils.UserUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -44,6 +46,10 @@ public class PictureController {
     private PictureService pictureService;
     @Resource
     private UserService userService;
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
+    @Resource
+    private Cache<String,String> caffeineCache;
 
 
     // region -- 以下为增删改查业务
@@ -231,6 +237,23 @@ public class PictureController {
         Page<Picture> picturePage = pictureService.page(new Page<>(current, pageSize),
                 pictureService.getQueryWrapper(pictureQueryDTO));
         return ResultUtils.success(pictureService.getPictureVOPage(picturePage,request));
+    }
+
+    /**
+     * 获取图片列表（有缓存）
+     * @param pictureQueryDTO
+     * @param request
+     * @return
+     */
+    @PostMapping("/list/page/vo/cache")
+    public BaseResponse<Page<PictureVO>> listPictureVOByPageWithCache(@RequestBody PictureQueryDTO pictureQueryDTO,HttpServletRequest request){
+        long pageSize = pictureQueryDTO.getPageSize();
+        // 限制爬虫
+        ThrowUtils.throwIf(pageSize > 20 , ErrorCode.OPERATION_ERROR);
+        // 普通用户默认只能查看已过审的数据
+        pictureQueryDTO.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
+        Page<PictureVO> pageCache = pictureService.getPictureVOPageWithCache(pictureQueryDTO, request);
+        return ResultUtils.success(pageCache);
     }
     // endregion
 

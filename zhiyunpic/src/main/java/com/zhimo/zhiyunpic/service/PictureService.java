@@ -92,4 +92,10 @@ public interface PictureService extends IService<Picture> {
 
     // endregion
 
+    /**
+     * 图片列表的多级缓存
+     * @return
+     */
+    Page<PictureVO> getPictureVOPageWithCache(PictureQueryDTO pictureQueryDTO, HttpServletRequest request);
+
 }
