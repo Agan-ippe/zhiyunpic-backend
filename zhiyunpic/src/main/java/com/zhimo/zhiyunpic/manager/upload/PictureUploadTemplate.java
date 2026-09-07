@@ -72,8 +72,14 @@ public abstract class PictureUploadTemplate {
             List<CIObject> objectList = processResults.getObjectList();
             if(CollUtil.isNotEmpty(objectList)) {
                 CIObject compressedCiObj = objectList.get(0);
+                // 缩略图默认为压缩图
+                CIObject thumbnailCiObj = compressedCiObj;
+                // 如果有缩略图，则获取缩略图对象
+                if (objectList.size() > 1) {
+                    thumbnailCiObj = objectList.get(1);
+                }
                 // 封装压缩图的返回结果
-                return buildResult(originFilename,compressedCiObj);
+                return buildResult(originFilename,compressedCiObj,thumbnailCiObj,uploadPath);
             }
             // 返回封装结果
             return buildResult(originFilename, file, uploadPath, imageInfo);
@@ -90,16 +96,22 @@ public abstract class PictureUploadTemplate {
      * 封装返回结果
      * @param originFilename 原始文件名
      * @param compressedCiObj 压缩后的对象
+     * @param thumbnailCiObj 缩略图对象
      * @return
      */
-    private UploadPictureDTO buildResult(String originFilename, CIObject compressedCiObj) {
+    private UploadPictureDTO buildResult(String originFilename, CIObject compressedCiObj, CIObject thumbnailCiObj, String uploadPath) {
         UploadPictureDTO uploadPictureDTO = new UploadPictureDTO();
         // 获取图片宽高比
         int picWidth = compressedCiObj.getWidth();
         int picHeight = compressedCiObj.getHeight();
         double picScale = NumberUtil.round(picWidth * 1.0 / picHeight, 2).doubleValue();
         // 封装结果
-        uploadPictureDTO.setUrl(cosClientConfig.getHost() + "/" + compressedCiObj.getKey());
+        // 原图地址
+        uploadPictureDTO.setUrl(cosClientConfig.getHost() + "/" + uploadPath);
+        // 压缩后的原图地址
+        uploadPictureDTO.setCompressedUrl(cosClientConfig.getHost() + "/" + compressedCiObj.getKey());
+        // 缩略图地址
+        uploadPictureDTO.setThumbnailUrl(cosClientConfig.getHost() + "/" + thumbnailCiObj.getKey());
         uploadPictureDTO.setPicName(FileUtil.mainName(originFilename));
         uploadPictureDTO.setPicSize(compressedCiObj.getSize().longValue());
         uploadPictureDTO.setPicWidth(picWidth);

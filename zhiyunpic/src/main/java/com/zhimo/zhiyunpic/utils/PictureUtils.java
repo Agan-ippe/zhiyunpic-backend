@@ -21,6 +21,8 @@ public class PictureUtils {
         // 构造入库图片信息
         Picture picture = new Picture();
         picture.setUrl(uploadPictureDTO.getUrl());
+        picture.setCompressedUrl(uploadPictureDTO.getCompressedUrl());
+        picture.setThumbnailUrl(uploadPictureDTO.getThumbnailUrl());
         String picName = uploadPictureDTO.getPicName();
         if (pictureUploadDTO != null && StrUtil.isNotBlank(pictureUploadDTO.getPicName())) {
             picName = pictureUploadDTO.getPicName();
