@@ -85,6 +85,11 @@ public class Picture implements Serializable {
     private Long userId;
 
     /**
+     * 下载次数
+     */
+    private Long downloadCount;
+
+    /**
      * 创建时间
      */
     private Date createTime;

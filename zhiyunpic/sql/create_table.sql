@@ -60,5 +60,12 @@ ALTER TABLE picture
     ADD thumbnailUrl VARCHAR(512) NULL COMMENT '缩略图Url' AFTER url,
     ADD compressedUrl VARCHAR(512) NULL COMMENT '压缩图Url' AFTER url;
 
+-- 截断表
+TRUNCATE TABLE picture;
+
+ALTER TABLE picture
+    -- 添加新列
+    ADD downloadCount BIGINT NULL DEFAULT 0 COMMENT '下载次数' AFTER reviewTime;
+
 
 

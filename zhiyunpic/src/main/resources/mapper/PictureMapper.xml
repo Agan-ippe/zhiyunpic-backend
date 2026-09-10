@@ -23,6 +23,7 @@
         <result property="editTime" column="editTime"/>
         <result property="updateTime" column="updateTime"/>
         <result property="isDelete" column="isDelete"/>
+        <result property="downloadCount" column="downloadCount"/>
         <result property="reviewStatus" column="reviewStatus"/>
         <result property="reviewMessage" column="reviewMessage"/>
         <result property="reviewerId" column="reviewerId"/>
@@ -35,6 +36,7 @@
         category,tags,
         picSize,picWidth,picHeight,picScale,picFormat,
         userId,createTime,editTime,updateTime,isDelete,
+        downloadCount,
         reviewStatus,reviewMessage,reviewerId,reviewTime
     </sql>
 </mapper>

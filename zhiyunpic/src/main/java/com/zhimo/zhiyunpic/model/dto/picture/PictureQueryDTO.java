@@ -93,4 +93,9 @@ public class PictureQueryDTO extends PageRequest implements Serializable {
      */
     private Long reviewerId;
 
+    /**
+     * 下载次数
+     */
+    private Long downloadCount;
+
 }

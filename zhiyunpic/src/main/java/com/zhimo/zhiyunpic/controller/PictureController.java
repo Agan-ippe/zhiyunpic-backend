@@ -1,6 +1,7 @@
 package com.zhimo.zhiyunpic.controller;
 
 import cn.hutool.json.JSONUtil;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.zhimo.zhiyunpic.annotation.AuthCheck;
@@ -292,6 +293,23 @@ public class PictureController {
         User loginUser = userService.getLoginUser(request);
         int uploadCount = pictureService.uploadPictureByBatch(pictureUploadByBatchDTO, loginUser);
         return ResultUtils.success(uploadCount);
+    }
+
+    /**
+     * 下载图片
+     * @param pictureDownloadDTO
+     * @param request
+     * @return
+     */
+    @PostMapping("/download")
+    public BaseResponse<Boolean> downloadPicture(@RequestBody PictureDownloadDTO pictureDownloadDTO, HttpServletRequest request) {
+        ThrowUtils.throwIf(pictureDownloadDTO == null, ErrorCode.PARAMS_ERROR);
+        Picture picture = pictureService.getById(pictureDownloadDTO.getId());
+        LambdaUpdateWrapper<Picture> updateWrapper = new LambdaUpdateWrapper<>();
+        // 通过数据库的原子更新，避免多用户同时下载时获取到相同地下载数导致漏更新，保证数据的一致性
+        updateWrapper.eq(Picture::getId,pictureDownloadDTO.getId()).setSql("downloadCount = downloadCount + 1");
+        boolean result = pictureService.update(updateWrapper);
+        return ResultUtils.success(result);
     }
 
 

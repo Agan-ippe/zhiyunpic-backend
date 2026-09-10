@@ -222,6 +222,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         Integer reviewStatus = pictureQueryDTO.getReviewStatus();
         String reviewMessage = pictureQueryDTO.getReviewMessage();
         Long reviewerId = pictureQueryDTO.getReviewerId();
+        Long downloadCount = pictureQueryDTO.getDownloadCount();
+
         // 从多字段中搜索
         // searchText 支持同时从 name 和introduction 中检索，使用 qw 中的or语法构造查询条件
         if (StrUtil.isNotBlank(searchText)) {
@@ -245,6 +247,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         queryWrapper.eq(ObjUtil.isNotEmpty(picScale), "picScale", picScale);
         queryWrapper.eq(ObjUtil.isNotEmpty(reviewStatus), "reviewStatus", reviewStatus);
         queryWrapper.eq(ObjUtil.isNotEmpty(reviewerId), "reviewerId", reviewerId);
+        queryWrapper.eq(ObjUtil.isNotEmpty(reviewerId), "downloadCount", downloadCount);
 
         // JSON 数组查询
         // 由于 tags 在数据库中是JSON格式的字符串，如果前端需要传多个 tag(必须同时存在才能查到)
