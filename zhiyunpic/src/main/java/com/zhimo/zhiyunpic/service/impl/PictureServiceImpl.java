@@ -11,6 +11,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.zhimo.zhiyunpic.exception.BusinessException;
 import com.zhimo.zhiyunpic.exception.ErrorCode;
+import com.zhimo.zhiyunpic.manager.CosManager;
 import com.zhimo.zhiyunpic.manager.upload.FilePictureUpload;
 import com.zhimo.zhiyunpic.manager.upload.PictureUploadTemplate;
 import com.zhimo.zhiyunpic.manager.upload.UrlPictureUpload;
@@ -37,6 +38,7 @@ import org.jsoup.select.Elements;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
@@ -74,6 +76,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     private Cache<String, String> caffeineCache;
     @Resource
     private StringRedisTemplate stringRedisTemplate;
+    @Resource
+    private CosManager cosManager;
 
 
 
@@ -166,6 +170,26 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         });
         pictureVOPage.setRecords(pictureVOList);
         return pictureVOPage;
+    }
+
+    @Async
+    @Override
+    public void clearPictureFile(Picture oldPicture) {
+        String url = oldPicture.getUrl();
+        String thumbnailUrl = oldPicture.getThumbnailUrl();
+        String compressedUrl = oldPicture.getCompressedUrl();
+        // 判空
+        ThrowUtils.throwIf(StrUtil.isBlank(url), ErrorCode.NOT_FOUND_ERROR, "图片url不存在");
+        ThrowUtils.throwIf(StrUtil.isBlank(thumbnailUrl), ErrorCode.NOT_FOUND_ERROR, "图片thumbnailUrl不存在");
+        ThrowUtils.throwIf(StrUtil.isBlank(compressedUrl), ErrorCode.NOT_FOUND_ERROR, "图片compressedUrl不存在");
+        // 将url中包含的域名和其他信息剔除，只保留存储路径
+        String urlPath = url.substring(url.indexOf("/public/"));
+        String thumbnailUrlPath = thumbnailUrl.substring(thumbnailUrl.indexOf("/public/"));
+        String compressedUrlPath = compressedUrl.substring(compressedUrl.indexOf("/public/"));
+        // 删除文件
+        cosManager.deleteObject(urlPath);
+        cosManager.deleteObject(thumbnailUrlPath);
+        cosManager.deleteObject(compressedUrlPath);
     }
     // endregion
 

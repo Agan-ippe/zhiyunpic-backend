@@ -110,6 +110,7 @@ public class PictureController {
         }
         // 操作数据库
         boolean result = pictureService.removeById(id);
+        pictureService.clearPictureFile(oldPicture);
         ThrowUtils.throwIf(!result, ErrorCode.DATABASE_ERROR);
         return ResultUtils.success(true);
     }
@@ -304,7 +305,6 @@ public class PictureController {
     @PostMapping("/download")
     public BaseResponse<Boolean> downloadPicture(@RequestBody PictureDownloadDTO pictureDownloadDTO, HttpServletRequest request) {
         ThrowUtils.throwIf(pictureDownloadDTO == null, ErrorCode.PARAMS_ERROR);
-        Picture picture = pictureService.getById(pictureDownloadDTO.getId());
         LambdaUpdateWrapper<Picture> updateWrapper = new LambdaUpdateWrapper<>();
         // 通过数据库的原子更新，避免多用户同时下载时获取到相同地下载数导致漏更新，保证数据的一致性
         updateWrapper.eq(Picture::getId,pictureDownloadDTO.getId()).setSql("downloadCount = downloadCount + 1");
