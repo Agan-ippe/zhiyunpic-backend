@@ -75,7 +75,7 @@ public class CosManager {
 
         List<PicOperations.Rule> rules = new ArrayList<>();
         // 图片压缩处理
-        String wedpKey = FileUtil.mainName(key) + ".wedp";
+        String wedpKey = FileUtil.mainName(key) + ".webp";
         PicOperations.Rule compressRule = new PicOperations.Rule();
         compressRule.setFileId(wedpKey);
         compressRule.setBucket(cosClientConfig.getBucket());
