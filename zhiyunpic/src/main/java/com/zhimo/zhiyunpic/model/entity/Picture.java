@@ -127,6 +127,11 @@ public class Picture implements Serializable {
     // endregion
 
     /**
+     * 空间 id（为空表示公共空间）
+     */
+    private Long spaceId;
+
+    /**
      * 是否删除
      */
     @TableLogic
